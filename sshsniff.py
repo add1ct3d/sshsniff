@@ -18,24 +18,23 @@ def main():
         try:
             p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = p.communicate()
-            # remove whitespace , tab , enter around pid
-            out = out.strip()
             if err:
                 logger.error( "get pid error : %s" % err)
-                raise
-            if out == "":
-                continue
-            elif int(out) > 0:
-                getuser(out)
-                getpasswd(out)
-                logger.info("----------------------------")
-                #sys.exit(0)
+                sys.exit(1)
+            # remove whitespace , tab , enter around pid
+            out = out.strip()
+            # handle cases that there are multiple ssh connections comes in at the the same time 
+            pids = out.split()
+            if len(pids) == 0:
                 continue
             else:
-                logger.error( "get pid unknown error!")
-                sys.exit(1) 
+                for pid in pids:
+                    getuser(pid)
+                    getpasswd(pid)
+                    logger.info("----------------------------")
+                    continue
         except Exception, e:
-            logger.error( "Unknown Exception: %s " % e)
+            logger.error( "Unknown Exception:%s " % e)
             sys.exit(1)
 
 def verifyuser():
@@ -50,7 +49,7 @@ def getuser(pid):
     out, err = p.communicate()
     if err:
         logger.error( "get user error: %s" % err)
-        raise
+        sys.exit(1)
     user = out.strip()
     logger.info( "user: %s" % user)
 
@@ -62,7 +61,7 @@ def getpasswd(pid):
     out, err = p.communicate()
     if err:
         logger.error( "get password error: %s" % err)
-        raise
+        sys.exit(1) 
     logger.info( "password: %s" % out)
 
 if __name__ == "__main__":
